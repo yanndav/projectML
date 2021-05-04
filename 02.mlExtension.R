@@ -275,27 +275,35 @@ for(line in lines){
 saveRDS(resultBLP, file="output/resultBLP.RDS")
 resultBLP = readRDS("output/resultBLP.RDS")
 
-BLPmid = data.frame(cbind(t(resultBLP[[names(resultBLP)[1]]][,2:4]),
-      t(resultBLP[[names(resultBLP)[2]]][,2:4]),
-      t(resultBLP[[names(resultBLP)[3]]][,2:4]),
-      t(resultBLP[[names(resultBLP)[4]]][,2:4]),
-      t(resultBLP[[names(resultBLP)[5]]][,2:4]))) %>% 
+BLPmid = data.frame(cbind(data.frame(t(resultBLP[[names(resultBLP)[1]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[2]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[3]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[4]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[5]]][,2:4])))) %>% 
   mutate_all(round,digits=2)
+rownames(BLPmid) <- c('Estimate','LB 90\\%','UB 90\\%')
+write.table(BLPmid, file = "output/blp_midline.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+            col.names = F, na="")
 
-write.table(BLPmid, file = "output/blp_midline.tex",eol='\\\\', sep='&',quote = F,row.names = F,
-            col.names = F)
 
-
-BLPend = data.frame(cbind(t(resultBLP[[names(resultBLP)[6]]][,2:4]),
-                          t(resultBLP[[names(resultBLP)[7]]][,2:4]),
-                          t(resultBLP[[names(resultBLP)[8]]][,2:4]),
-                          t(resultBLP[[names(resultBLP)[9]]][,2:4]),
-                          t(resultBLP[[names(resultBLP)[10]]][,2:4]))) %>% 
+BLPend = data.frame(cbind(data.frame(t(resultBLP[[names(resultBLP)[6]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[7]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[8]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[9]]][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultBLP[[names(resultBLP)[10]]][,2:4])))) %>% 
   mutate_all(round,digits=2) 
-rownames(BLPend) <- c('Estimate','LB 90\%','UB 90\%')
+rownames(BLPend) <- c('Estimate','LB 90\\%','UB 90\\%')
 
-write.table(BLPend, file = "output/blp_endline.tex",eol='\\\\', sep='&',quote = F,row.names = F,
-            col.names = F)
+write.table(BLPend, file = "output/blp_endline.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+            col.names = F,na="")
 
 # 03. GATES ---------------------------------------------------------------
 
@@ -392,7 +400,7 @@ table_from_gates <-function(model) {
 }
 
 
-rereunParam = 100
+rereunParam = 1
 resultGATES = list()
 for(line in lines){
   for(response in responses){
@@ -414,21 +422,50 @@ for(line in lines){
 saveRDS(resultGATES, file="output/resultGATES.RDS")
 # resultGATES = readRDS("output/resultGATES.RDS")
 
+
+
+GATESmid = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[1]]][['tableGATES']][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultGATES[[names(resultGATES)[2]]][['tableGATES']][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultGATES[[names(resultGATES)[3]]][['tableGATES']][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultGATES[[names(resultGATES)[4]]][['tableGATES']][,2:4])),
+                          c(NA,NA,NA),
+                          data.frame(t(resultGATES[[names(resultGATES)[5]]][['tableGATES']][,2:4])))) %>% 
+  mutate_all(round,digits=2) 
+rownames(GATESmid) <- c('Estimate','LB 90\\%','UB 90\\%')
+
+write.table(GATESmid, file = "output/gates_midline.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+            col.names = F,na="")
+
+
+GATESend = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[6]]][['tableGATES']][,2:4])),
+                            c(NA,NA,NA),
+                            data.frame(t(resultGATES[[names(resultGATES)[7]]][['tableGATES']][,2:4])),
+                            c(NA,NA,NA),
+                            data.frame(t(resultGATES[[names(resultGATES)[8]]][['tableGATES']][,2:4])),
+                            c(NA,NA,NA),
+                            data.frame(t(resultGATES[[names(resultGATES)[9]]][['tableGATES']][,2:4])),
+                            c(NA,NA,NA),
+                            data.frame(t(resultGATES[[names(resultGATES)[10]]][['tableGATES']][,2:4])))) %>% 
+  mutate_all(round,digits=2) 
+rownames(GATESend) <- c('Estimate','LB 90\\%','UB 90\\%')
+
+write.table(GATESend, file = "output/gates_endine.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+            col.names = F,na="")
+
 for(name in names(resultGATES)){
-  # GATES
-  title =  cleanTitle(name,add="Sorted Group Average Treatment Effects for ")
-  print(title)
-  table = kable(resultGATES[[name]][['tableGATES']], "latex",caption=title,label=paste0("gates",name),booktabs = T)
-  writeLines(table,con=paste0('output/GATES_',name,'.tex'))
-  
-  # CLAN
-  CLAN_df = as.data.frame(t(resultGATES[[name]][['clan']])[2:ncol(resultGATES[[name]][['clan']]),]) %>% 
+    # CLAN
+  CLAN_df = as.data.frame(t(resultGATES[[name]][['clan']])[1:ncol(resultGATES[[name]][['clan']]),]) %>% 
+    rownames_to_column() %>% 
     mutate(V1=as.numeric(V1),
            V2=as.numeric(V2),
            "Abs. Perc. Difference" = abs((V1-V2)/V1),
            rank = n()-rank(`Abs. Perc. Difference`)) %>% 
     rename("Group 1"=V1,
-           "Group 4"=V2) %>% 
+           "Group 4"=V2,
+           "Variable"=rowname) %>% 
     filter(rank<=10) %>% 
     select(-rank)
   
