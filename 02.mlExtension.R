@@ -424,36 +424,46 @@ saveRDS(resultGATES, file="output/resultGATES.RDS")
 
 
 
-GATESmid = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[1]]][['tableGATES']][,2:4])),
+GATESmidA = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[1]]][['tableGATES']][,2:4])),
                           c(NA,NA,NA),
                           data.frame(t(resultGATES[[names(resultGATES)[2]]][['tableGATES']][,2:4])),
                           c(NA,NA,NA),
-                          data.frame(t(resultGATES[[names(resultGATES)[3]]][['tableGATES']][,2:4])),
-                          c(NA,NA,NA),
-                          data.frame(t(resultGATES[[names(resultGATES)[4]]][['tableGATES']][,2:4])),
-                          c(NA,NA,NA),
-                          data.frame(t(resultGATES[[names(resultGATES)[5]]][['tableGATES']][,2:4])))) %>% 
+                          data.frame(t(resultGATES[[names(resultGATES)[3]]][['tableGATES']][,2:4])))) %>% 
   mutate_all(round,digits=2) 
-rownames(GATESmid) <- c('Estimate','LB 90\\%','UB 90\\%')
+rownames(GATESmidA) <- c('Estimate','LB 90\\%','UB 90\\%')
+GATESmidB = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[4]]][['tableGATES']][,2:4])),
+                             c(NA,NA,NA),
+                             data.frame(t(resultGATES[[names(resultGATES)[5]]][['tableGATES']][,2:4])))) %>% 
+  mutate_all(round,digits=2) 
+rownames(GATESmidB) <- c('Estimate','LB 90\\%','UB 90\\%')
 
-write.table(GATESmid, file = "output/gates_midline.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+write.table(GATESmidA, file = "output/gates_midlineA.tex",eol='\\\\', sep='&',quote = F,row.names = T,
             col.names = F,na="")
 
+write.table(GATESmidB, file = "output/gates_midlineB.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+            col.names = F,na="")
 
-GATESend = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[6]]][['tableGATES']][,2:4])),
+GATESendA = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[6]]][['tableGATES']][,2:4])),
                             c(NA,NA,NA),
                             data.frame(t(resultGATES[[names(resultGATES)[7]]][['tableGATES']][,2:4])),
                             c(NA,NA,NA),
-                            data.frame(t(resultGATES[[names(resultGATES)[8]]][['tableGATES']][,2:4])),
-                            c(NA,NA,NA),
-                            data.frame(t(resultGATES[[names(resultGATES)[9]]][['tableGATES']][,2:4])),
+                            data.frame(t(resultGATES[[names(resultGATES)[8]]][['tableGATES']][,2:4])))) %>% 
+  mutate_all(round,digits=2) 
+rownames(GATESendA) <- c('Estimate','LB 90\\%','UB 90\\%')
+
+write.table(GATESendA, file = "output/gates_endineA.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+            col.names = F,na="")
+
+GATESendB = data.frame(cbind(data.frame(t(resultGATES[[names(resultGATES)[9]]][['tableGATES']][,2:4])),
                             c(NA,NA,NA),
                             data.frame(t(resultGATES[[names(resultGATES)[10]]][['tableGATES']][,2:4])))) %>% 
   mutate_all(round,digits=2) 
-rownames(GATESend) <- c('Estimate','LB 90\\%','UB 90\\%')
+rownames(GATESendB) <- c('Estimate','LB 90\\%','UB 90\\%')
 
-write.table(GATESend, file = "output/gates_endine.tex",eol='\\\\', sep='&',quote = F,row.names = T,
+write.table(GATESendB, file = "output/gates_endineB.tex",eol='\\\\', sep='&',quote = F,row.names = T,
             col.names = F,na="")
+
+
 
 for(name in names(resultGATES)){
     # CLAN
