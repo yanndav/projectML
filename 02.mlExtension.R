@@ -15,7 +15,7 @@
 # Installs packages if not already installed, then loads packages 
 list.of.packages <- c("glmnet", "rpart", "rpart.plot", "randomForest", "devtools", "tidyverse",
   "knitr", "SuperLearner", "caret", "xgboost","stargazer","xtable",'haven','labelled','writexl',
-  'readxl', 'kableExtra')
+  'readxl', 'kableExtra','Treeio')
 
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -128,16 +128,15 @@ causal_tree <- function(data,line,response,treatment,controls){
 
 
   rpart.plot(honest_tree, roundint = F)
-
-
+  
   opcpid <- which.min(honest_tree$cp[, 4])
   opcp <- honest_tree$cp[opcpid, 1]
   honest_tree_prune <- prune(honest_tree, cp = opcp)
 
-  png(filename = paste0('output/',line,response,'.png'), units = 'px',
-  width = 1500, height = 800)
+  png(filename = paste0('output/',line,response,'.png'), units = 'cm',
+  width = 15, height = 15, res=100)
   rpart.plot(honest_tree_prune, roundint = F)
-  title = cleanTitle(paste0(line,response),add = 'Sources of treatment heterogeneity on ')
+  title = cleanTitle(paste0(line,response),add = 'Sources of treatment heterogeneity on \n')
   title(title)
   
   dev.off()
@@ -169,6 +168,8 @@ for(line in lines){
 }
 saveRDS(resultCausalTree, file="output/resultCausalTree.RDS")
 # resultCausalTree = readRDS("output/resultCausalTreeRDS")
+
+stargazer(resultCausalTree)
 
 #HERE, NEED TO EXPORT RESULTS
 # 02. BLP -----------------------------------------------------------------
