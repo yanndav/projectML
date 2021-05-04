@@ -38,7 +38,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 getwd()
 
 # Loading cleaned dataset
-data = read_dta('ELA.dta')
+data = read_dta('ELA.dta') %>% filter(panel==1) %>% select(-panel)
 
 # Checking column names
 colnames(data)
@@ -64,15 +64,14 @@ responses = c("Entrep_total", "any_iga", "selfempl", "empl", "Expenditure_totDF"
 treatment = c('treatment')
 lines = c('R','Q')
 # Removes all identifiers 
-remove = c('id','idno','pid','branch_name')
-
-controls = setdiff(variables_labels$V1, c(treatment,
+remove = c('id','idno','pid','branch_name',grep('z.*',colnames(data),value = T),
+           grep('ALL',colnames(data),value = T), 'baseline','follow_up')
+controls = as.vector(variables_labels$V1[!(variables_labels$V1 %in% c(treatment,
                                                     paste0(rep(lines,1,
                                                                each = length(responses)),
                                                            responses),
-                                                    remove))
-
-
+                                                    remove))])
+matCor = cor(select_if(data[,controls], is.numeric), use='pairwise.complete.obs')
 length(controls)# 58 variables selected
 
 names_clean = list('Entrep_total'='Entrepreneurial ability index',
@@ -211,6 +210,7 @@ blp <- function(data,line,response,treatment,controls, prop_scores=F) {
     
     p <- sl_w1$SL.predict
   } else {
+    
     p <- rep(mean(Xa), length(Xb))
   }
   
@@ -240,7 +240,7 @@ blp <- function(data,line,response,treatment,controls, prop_scores=F) {
   Wnames <- paste0('`',paste(colnames(Wb), collapse="`+`"),'`')
   fml <- paste("Y ~",Wnames,"+ D + D:C")
   model <- lm(fml, df, weights = 1/(p*(1-p))) 
-  
+  summary(model)
   return(model) 
 }
 
@@ -260,7 +260,7 @@ table_from_blp <-function(model) {
   return(res)
 }
 
-rerunParam = 100
+rerunParam = 2
 resultBLP = list()
 for(line in lines){
   for(response in responses){
@@ -269,10 +269,10 @@ for(line in lines){
     resultBLP[[paste0(line,response)]] <- rerun(rerunParam, table_from_blp(blp(data,line,response,treatment,controls))) %>% # Increase reruns in practice!
       bind_rows %>%
       group_by(coef) %>%
-      summarize_all(median)
+      summarize_all(median, na.rm=T)
     }
 }
-# saveRDS(resultBLP, file="output/resultBLP.RDS")
+saveRDS(resultBLP, file="output/resultBLP.RDS")
 resultBLP = readRDS("output/resultBLP.RDS")
 
 BLPmid = data.frame(cbind(t(resultBLP[[names(resultBLP)[1]]][,2:4]),
@@ -291,7 +291,8 @@ BLPend = data.frame(cbind(t(resultBLP[[names(resultBLP)[6]]][,2:4]),
                           t(resultBLP[[names(resultBLP)[8]]][,2:4]),
                           t(resultBLP[[names(resultBLP)[9]]][,2:4]),
                           t(resultBLP[[names(resultBLP)[10]]][,2:4]))) %>% 
-  mutate_all(round,digits=2)
+  mutate_all(round,digits=2) 
+rownames(BLPend) <- c('Estimate','LB 90\%','UB 90\%')
 
 write.table(BLPend, file = "output/blp_endline.tex",eol='\\\\', sep='&',quote = F,row.names = F,
             col.names = F)
