@@ -63,7 +63,7 @@ responses = c("Entrep_total", "any_iga", "selfempl", "empl", "Expenditure_totDF"
 treatment = c('treatment')
 lines = c('R','Q')
 # Removes all identifiers 
-remove = c('id','idno','pid')
+remove = c('id','idno','pid','branch_name')
 
 controls = setdiff(variables_labels$V1, c(treatment,
                                                     paste0(rep(lines,1,
@@ -281,8 +281,8 @@ names_clean = list('Entrep_total'='Entrepreneurial ability index',
 for(name in names(resultBLP)){
  title =  cleanTitle(name,add="Best Linear Predictor for ")
  print(title)
- table = kable(resultBLP[['REntrep_total']], "latex",caption=title,label=name,booktabs = T)
- writeLines(table,con=paste0(name,'.tex'))
+ table = kable(resultBLP[[name]], "latex",caption=title,label=paste0("blp",name),booktabs = T)
+ writeLines(table,con=paste0("BLP_",name,'.tex'))
 }
 
 
@@ -329,7 +329,7 @@ gates <- function(data,line,response,treatment,controls, Q=4, prop_scores=F) {
   
   ### STEP 3a: Get CATE (for example using xgboost) on set A. Predict on set B.
   sl_y = SuperLearner(Y = Ya, 
-                      X = data.frame(X=Xa, Wa), 
+                      X = cbind(Wa,data.frame(X=Xa)), 
                       family = gaussian(), 
                       SL.library = "SL.xgboost", 
                       cvControl = list(V=0))
@@ -348,9 +348,9 @@ gates <- function(data,line,response,treatment,controls, Q=4, prop_scores=F) {
     factor()
   
   ### STEP 4: Create a dataframe with Y, W (set B), D, G and p. Regress Y on group membership variables and covariates. 
-  df <- data.frame(Y=Yb, Wb, D, G, p)
+  df <- cbind(Wb,data.frame(Y=Yb, D, G, p))
   
-  Wnames <- paste0('`',paste(colnames(Wb), collapse="+"),'`')
+  Wnames <- paste0('`',paste(colnames(Wb), collapse="`+`"),'`')
   fml <- paste("Y ~",Wnames,"+ D:G")
   model <- lm(fml, df, weights = 1/(p*(1-p))) 
   
@@ -373,35 +373,25 @@ table_from_gates <-function(model) {
   # Confidence intervals
   cihat <- confint(model)[c("D:G1","D:G2","D:G3","D:G4"),]
   
-  res <- tibble(coefficient = c("gamma1","gamma2","gamma3","gamma4"),
-                estimates = thetahat,
-                ci_lower_90 = cihat[,1],
-                ci_upper_90 = cihat[,2])
+  res <- tibble(Coefficient = c("Gamma1","Gamma2","Gamma3","Gamma4"),
+                Estimates = thetahat,
+                'Lower Bound 90%' = cihat[,1],
+                'Upper Bound 90%' = cihat[,2])
   
   return(res)
 }
 
-output <- rerun(10, gates(data,line,response,treatment,controls)) 
 
-
-table = lapply(1:length(output),
-               function(k) table_from_gates(output[[k]][["model"]]))%>%
-  bind_rows %>%
-  group_by(coefficient) %>%
-  summarize_all(median)
-table
-kable(table, format = 'latex')
-
-
+rereunParam = 100
 resultGATES = list()
 for(line in lines){
   for(response in responses){
     print(response)
-    resultGATES[[paste0(line,response)]][["raw"]] <- rerun(10, gates(data,line,response,treatment,controls))
+    resultGATES[[paste0(line,response)]][["raw"]] <- rerun(rereunParam, gates(data,line,response,treatment,controls))
     resultGATES[[paste0(line,response)]][['tableGATES']] = lapply(1:length(resultGATES[[paste0(line,response)]][["raw"]]),
                                                function(k) table_from_gates(resultGATES[[paste0(line,response)]][["raw"]][[k]][["model"]]))%>%
       bind_rows %>%
-      group_by(coefficient) %>%
+      group_by(Coefficient) %>%
       summarize_all(median)
     resultGATES[[paste0(line,response)]][['clan']] = lapply(1:length(resultGATES[[paste0(line,response)]][["raw"]]),
                                                             function(k) resultGATES[[paste0(line,response)]][["raw"]][[k]][["clan"]])%>% 
@@ -411,4 +401,33 @@ for(line in lines){
     }
 }
 
+for(name in names(resultGATES)){
+  # GATES
+  title =  cleanTitle(name,add="Sorted Group Average Treatment Effects for ")
+  print(title)
+  table = kable(resultGATES[[name]][['tableGATES']], "latex",caption=title,label=paste0("gates",name),booktabs = T)
+  writeLines(table,con=paste0('GATES_',name,'.tex'))
+  
+  # CLAN
+  CLAN_df = as.data.frame(t(resultGATES[[name]][['clan']])[2:ncol(resultGATES[[name]][['clan']]),]) %>% 
+    mutate(V1=as.numeric(V1),
+           V2=as.numeric(V2),
+           "Abs. Perc. Difference" = abs((V1-V2)/V1),
+           rank = n()-rank(`Abs. Perc. Difference`)) %>% 
+    rename("Group 1"=V1,
+           "Group 4"=V2) %>% 
+    filter(rank<=10) %>% 
+    select(-rank)
+  
+  titleCLAN =  cleanTitle(name,add="Classification Analysis for ")
+  print(titleCLAN)
+  tableCLAN = kable(CLAN_df, "latex",caption=titleCLAN,label=paste0("clan",name),booktabs = T)
+  writeLines(tableCLAN,con=paste0('CLAN_',name,'.tex'))
+  
+}
+
+
+
+  
+  
 
