@@ -84,4 +84,4 @@ for(i in seq(1,length(var))){
   
 }
 view(pivot_wider(results,id_cols=c('var','esti'), names_from = 'line', values_from = 'vals'))
-
+# HERE, NEED TO EXPORT TABLES

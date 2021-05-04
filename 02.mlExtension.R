@@ -19,14 +19,15 @@ list.of.packages <- c("glmnet", "rpart", "rpart.plot", "randomForest", "devtools
 
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages, repos = "http://cran.us.r-project.org")
+if(length(new.packages)) install.packages(new.packages, repos = "http://cran.us.r-project.org", dependencies = T)
 
 invisible(lapply(list.of.packages, library, character.only = TRUE))
 
 
-
 # install causalTree package from Susan Athey's github
-#install_github('susanathey/causalTree')
+if(!('causalTree' %in% installed.packages())){
+  install_github('susanathey/causalTree')
+}
 library(causalTree)
 
 ## 00.2. DATA LOADING
@@ -56,7 +57,7 @@ variables_labels = variables_labels %>% mutate(V3=as.numeric(V3)) %>% filter(V3<
 
 
 write_xlsx(x= as.data.frame(variables_labels),
-           path = file.path('variables.xlsx'))
+           path = file.path('output/variables.xlsx'))
 
 # Creating lists:
 responses = c("Entrep_total", "any_iga", "selfempl", "empl", "Expenditure_totDF")
@@ -74,7 +75,11 @@ controls = setdiff(variables_labels$V1, c(treatment,
 
 length(controls)# 58 variables selected
 
-
+names_clean = list('Entrep_total'='Entrepreneurial ability index',
+                   "any_iga" = 'Any income-generating activity',
+                   "selfempl" = "Self-employed",
+                   "empl" = 'Wage employed',
+                   "Expenditure_totDF" = "Expenditure on goods in the last month")
 
 # 01. CAUSAL TREES --------------------------------------------------------
 cleanTitle <- function(name,add=""){
@@ -130,7 +135,7 @@ causal_tree <- function(data,line,response,treatment,controls){
   opcp <- honest_tree$cp[opcpid, 1]
   honest_tree_prune <- prune(honest_tree, cp = opcp)
 
-  png(filename = paste0(line,response,'.png'), units = 'px',
+  png(filename = paste0('output/',line,response,'.png'), units = 'px',
   width = 1500, height = 800)
   rpart.plot(honest_tree_prune, roundint = F)
   title = cleanTitle(paste0(line,response),add = 'Sources of treatment heterogeneity on ')
@@ -163,10 +168,10 @@ for(line in lines){
     resultCausalTree[[paste0(line,response)]] <- causal_tree(data,line,response,treatment,controls)
   }
 }
-  
+saveRDS(resultCausalTree, file="output/resultCausalTree.RDS")
+# resultCausalTree = readRDS("output/resultCausalTreeRDS")
 
-
-
+#HERE, NEED TO EXPORT RESULTS
 # 02. BLP -----------------------------------------------------------------
 zeros <- function(n) {
   return(integer(n))
@@ -259,6 +264,7 @@ rerunParam = 100
 resultBLP = list()
 for(line in lines){
   for(response in responses){
+    print(line)
     print(response)
     resultBLP[[paste0(line,response)]] <- rerun(rerunParam, table_from_blp(blp(data,line,response,treatment,controls))) %>% # Increase reruns in practice!
       bind_rows %>%
@@ -266,15 +272,8 @@ for(line in lines){
       summarize_all(median)
     }
 }
-saveRDS(resultBLP, file="resultBLP.RDS")
-resultBLP = readRDS("resultBLP.RDS")
-
-names(resultBLP)
-names_clean = list('Entrep_total'='Entrepreneurial ability index',
-                   "any_iga" = 'Any income-generating activity',
-                   "selfempl" = "Self-employed",
-                   "empl" = 'Wage employed',
-                   "Expenditure_totDF" = "Expenditure on goods in the last month")
+saveRDS(resultBLP, file="output/resultBLP.RDS")
+# resultBLP = readRDS("output/resultBLP.RDS")
 
 
 
@@ -282,7 +281,7 @@ for(name in names(resultBLP)){
  title =  cleanTitle(name,add="Best Linear Predictor for ")
  print(title)
  table = kable(resultBLP[[name]], "latex",caption=title,label=paste0("blp",name),booktabs = T)
- writeLines(table,con=paste0("BLP_",name,'.tex'))
+ writeLines(table,con=paste0("output/BLP_",name,'.tex'))
 }
 
 
@@ -386,6 +385,7 @@ rereunParam = 100
 resultGATES = list()
 for(line in lines){
   for(response in responses){
+    print(line)
     print(response)
     resultGATES[[paste0(line,response)]][["raw"]] <- rerun(rereunParam, gates(data,line,response,treatment,controls))
     resultGATES[[paste0(line,response)]][['tableGATES']] = lapply(1:length(resultGATES[[paste0(line,response)]][["raw"]]),
@@ -400,13 +400,15 @@ for(line in lines){
       summarize_all(median)
     }
 }
+saveRDS(resultGATES, file="output/resultGATES.RDS")
+# resultGATES = readRDS("output/resultGATES.RDS")
 
 for(name in names(resultGATES)){
   # GATES
   title =  cleanTitle(name,add="Sorted Group Average Treatment Effects for ")
   print(title)
   table = kable(resultGATES[[name]][['tableGATES']], "latex",caption=title,label=paste0("gates",name),booktabs = T)
-  writeLines(table,con=paste0('GATES_',name,'.tex'))
+  writeLines(table,con=paste0('output/GATES_',name,'.tex'))
   
   # CLAN
   CLAN_df = as.data.frame(t(resultGATES[[name]][['clan']])[2:ncol(resultGATES[[name]][['clan']]),]) %>% 
@@ -422,7 +424,7 @@ for(name in names(resultGATES)){
   titleCLAN =  cleanTitle(name,add="Classification Analysis for ")
   print(titleCLAN)
   tableCLAN = kable(CLAN_df, "latex",caption=titleCLAN,label=paste0("clan",name),booktabs = T)
-  writeLines(tableCLAN,con=paste0('CLAN_',name,'.tex'))
+  writeLines(tableCLAN,con=paste0('output/CLAN_',name,'.tex'))
   
 }
 
