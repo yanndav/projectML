@@ -85,3 +85,19 @@ for(i in seq(1,length(var))){
 }
 view(pivot_wider(results,id_cols=c('var','esti'), names_from = 'line', values_from = 'vals'))
 # HERE, NEED TO EXPORT TABLES
+names_clean = list('Entrep_total'='Entrepreneurial ability index',
+                   "any_iga" = 'Any income-generating activity',
+                   "selfempl" = "Self-employed",
+                   "empl" = 'Wage employed',
+                   "Expenditure_totDF" = "Expenditure on goods in the last month")
+TABLE = pivot_wider(results,id_cols=c('var','esti'), names_from = 'line', values_from = 'vals') %>% 
+  mutate(R = ifelse(esti=="se",paste0('(',R,')'),R),
+         Q = ifelse(esti=="se",paste0('(',Q,')'),Q)) %>% 
+  select(-esti) 
+
+TABLE[,"var"] <- c("Entrep. ability index",'',"Income-gen. activ.","",
+                   "Self-employed",'','Wage employed',"","Expend. goods. month","")
+
+write.table(TABLE, file = "output/replication.tex",eol='\\\\', sep='&',quote = F,row.names = F,
+            col.names = F,na="")
+

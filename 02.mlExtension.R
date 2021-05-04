@@ -466,29 +466,43 @@ write.table(GATESendB, file = "output/gates_endineB.tex",eol='\\\\', sep='&',quo
 
 
 
-for(name in names(resultGATES)){
-    # CLAN
+clean_CLAN <- function(name){
   CLAN_df = as.data.frame(t(resultGATES[[name]][['clan']])[1:ncol(resultGATES[[name]][['clan']]),]) %>% 
     rownames_to_column() %>% 
-    mutate(V1=as.numeric(V1),
-           V2=as.numeric(V2),
-           "Abs. Perc. Difference" = abs((V1-V2)/V1),
-           rank = n()-rank(`Abs. Perc. Difference`)) %>% 
-    rename("Group 1"=V1,
-           "Group 4"=V2,
-           "Variable"=rowname) %>% 
+    mutate(V1=as.numeric(as.character(V1)),
+           V2=as.numeric(as.character(V2)),
+           diff = abs((V1-V2)/V1),
+           rank = n()-rank(diff)) %>% 
     filter(rank<=10) %>% 
-    select(-rank)
-  
-  titleCLAN =  cleanTitle(name,add="Classification Analysis for ")
-  print(titleCLAN)
-  tableCLAN = kable(CLAN_df, "latex",caption=titleCLAN,label=paste0("clan",name),booktabs = T)
-  writeLines(tableCLAN,con=paste0('output/CLAN_',name,'.tex'))
-  
+    select(-rank) %>% 
+    mutate_if(is.numeric, round, digits=2)
+  colnames(CLAN_df) = c("variable",paste0(name,"1"),paste0(name,"2"),paste0(name,"diff"))
+return(CLAN_df)
 }
 
+CLAN_df = lapply(names(resultGATES), function(k){cbind(clean_CLAN(k),
+                                                       rep(NA,nrow(clean_CLAN(k))))
+  }) %>% reduce(full_join, by="variable") 
 
+CLAN_DF_mid_a = CLAN_df[2:nrow(CLAN_df),c(1:12)]
+CLAN_DF_mid_a = CLAN_DF_mid_a[rowSums(is.na(CLAN_DF_mid_a))<ncol(CLAN_DF_mid_a)-1,] 
 
-  
-  
+write.table(CLAN_DF_mid_a, file = "output/clan_mida.tex",eol='\\\\', sep='&',quote = F,row.names = F,
+            col.names = F,na="")
+
+CLAN_DF_end_a = CLAN_df[2:nrow(CLAN_df),c(1,22:32)]
+CLAN_DF_end_a = CLAN_DF_end_a[rowSums(is.na(CLAN_DF_end_a))<ncol(CLAN_DF_end_a)-1,] 
+write.table(CLAN_DF_end_a, file = "output/clan_enda.tex",eol='\\\\', sep='&',quote = F,row.names = F,
+            col.names = F,na="")
+
+CLAN_DF_mid_b = CLAN_df[2:nrow(CLAN_df),c(1,14:20)]
+CLAN_DF_mid_b = CLAN_DF_mid_b[rowSums(is.na(CLAN_DF_mid_b))<ncol(CLAN_DF_mid_b)-1,] 
+write.table(CLAN_DF_mid_b, file = "output/clan_midb.tex",eol='\\\\', sep='&',quote = F,row.names = F,
+            col.names = F,na="")
+
+CLAN_DF_end_b = CLAN_df[2:nrow(CLAN_df),c(1,34:40)]
+CLAN_DF_end_b = CLAN_DF_end_b[rowSums(is.na(CLAN_DF_end_b))<ncol(CLAN_DF_end_b)-1,] 
+write.table(CLAN_DF_end_b, file = "output/clan_endb.tex",eol='\\\\', sep='&',quote = F,row.names = F,
+            col.names = F,na="")
+
 
