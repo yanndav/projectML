@@ -252,10 +252,10 @@ table_from_blp <-function(model) {
   # Confidence intervals
   cihat <- confint(model)[c("D","D:C"),]
   
-  res <- tibble(Coefficient = c("beta1","beta2"),
-                Estimates = thetahat,
-                'Lower Bound 90%' = cihat[,1],
-                'Upper Bound 90%'= cihat[,2])
+  res <- tibble(coef = c("beta1","beta2"),
+                esti = thetahat,
+                lb = cihat[,1],
+                ub= cihat[,2])
   
   return(res)
 }
@@ -268,23 +268,33 @@ for(line in lines){
     print(response)
     resultBLP[[paste0(line,response)]] <- rerun(rerunParam, table_from_blp(blp(data,line,response,treatment,controls))) %>% # Increase reruns in practice!
       bind_rows %>%
-      group_by(Coefficient) %>%
+      group_by(coef) %>%
       summarize_all(median)
     }
 }
-saveRDS(resultBLP, file="output/resultBLP.RDS")
-# resultBLP = readRDS("output/resultBLP.RDS")
+# saveRDS(resultBLP, file="output/resultBLP.RDS")
+resultBLP = readRDS("output/resultBLP.RDS")
+
+BLPmid = data.frame(cbind(t(resultBLP[[names(resultBLP)[1]]][,2:4]),
+      t(resultBLP[[names(resultBLP)[2]]][,2:4]),
+      t(resultBLP[[names(resultBLP)[3]]][,2:4]),
+      t(resultBLP[[names(resultBLP)[4]]][,2:4]),
+      t(resultBLP[[names(resultBLP)[5]]][,2:4]))) %>% 
+  mutate_all(round,digits=2)
+
+write.table(BLPmid, file = "output/blp_midline.tex",eol='\\\\', sep='&',quote = F,row.names = F,
+            col.names = F)
 
 
+BLPend = data.frame(cbind(t(resultBLP[[names(resultBLP)[6]]][,2:4]),
+                          t(resultBLP[[names(resultBLP)[7]]][,2:4]),
+                          t(resultBLP[[names(resultBLP)[8]]][,2:4]),
+                          t(resultBLP[[names(resultBLP)[9]]][,2:4]),
+                          t(resultBLP[[names(resultBLP)[10]]][,2:4]))) %>% 
+  mutate_all(round,digits=2)
 
-for(name in names(resultBLP)){
- title =  cleanTitle(name,add="Best Linear Predictor for ")
- print(title)
- table = kable(resultBLP[[name]], "latex",caption=title,label=paste0("blp",name),booktabs = T)
- writeLines(table,con=paste0("output/BLP_",name,'.tex'))
-}
-
-
+write.table(BLPend, file = "output/blp_endline.tex",eol='\\\\', sep='&',quote = F,row.names = F,
+            col.names = F)
 
 # 03. GATES ---------------------------------------------------------------
 
