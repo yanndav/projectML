@@ -169,8 +169,6 @@ for(line in lines){
 saveRDS(resultCausalTree, file="output/resultCausalTree.RDS")
 # resultCausalTree = readRDS("output/resultCausalTreeRDS")
 
-stargazer(resultCausalTree)
-
 #HERE, NEED TO EXPORT RESULTS
 # 02. BLP -----------------------------------------------------------------
 zeros <- function(n) {
@@ -261,7 +259,7 @@ table_from_blp <-function(model) {
   return(res)
 }
 
-rerunParam = 2
+rerunParam = 100
 resultBLP = list()
 for(line in lines){
   for(response in responses){
@@ -401,7 +399,7 @@ table_from_gates <-function(model) {
 }
 
 
-rereunParam = 1
+rereunParam = 50
 resultGATES = list()
 for(line in lines){
   for(response in responses){
