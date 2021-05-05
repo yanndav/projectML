@@ -92,12 +92,14 @@ names_clean = list('Entrep_total'='Entrepreneurial ability index',
                    "Expenditure_totDF" = "Expenditure on goods in the last month")
 TABLE = pivot_wider(results,id_cols=c('var','esti'), names_from = 'line', values_from = 'vals') %>% 
   mutate(R = ifelse(esti=="se",paste0('(',R,')'),R),
+         n = rep(NA,10),
          Q = ifelse(esti=="se",paste0('(',Q,')'),Q)) %>% 
   select(-esti) 
 
 TABLE[,"var"] <- c("Entrep. ability index",'',"Income-gen. activ.","",
                    "Self-employed",'','Wage employed',"","Expend. goods. month","")
 
+TABLE = TABLE[,c(1,2,4,3)]
 write.table(TABLE, file = "output/replication.tex",eol='\\\\', sep='&',quote = F,row.names = F,
             col.names = F,na="")
 
